@@ -1,0 +1,14 @@
+services:
+  adblock-dns:
+    image: ghcr.io/tyfsadik/mobile-chrome-adblock:latest
+    build: .
+    restart: unless-stopped
+    # Change dns.example.com to your own domain (its DNS A record must point to this server).
+    command: ["-domain", "dns.example.com"]
+    ports:
+      - "80:80"     # Let's Encrypt certificate challenges
+      - "443:443"   # DNS-over-HTTPS (iPhone profile, Chrome Secure DNS) + setup page
+      - "853:853"   # DNS-over-TLS (Android Private DNS)
+    volumes:
+      - ./certs:/data/certs
+      - ./allowlist.txt:/data/allowlist.txt:ro

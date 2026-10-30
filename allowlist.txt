@@ -1,0 +1,2 @@
+# Domains that must never be blocked (one per line). Subdomains are included.
+# Add anything here if a site or app breaks, then restart the server.
