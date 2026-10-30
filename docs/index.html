@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mobile Chrome AdBlock</title>
+<meta name="description" content="Block ads in Chrome on Android and iPhone. Free, no extensions, no root.">
+<meta property="og:title" content="Mobile Chrome AdBlock">
+<meta property="og:description" content="Block ads in Chrome on Android and iPhone. Free, no extensions, no root.">
+<meta property="og:image" content="https://tyfsadik.github.io/mobile-chrome-adblock/img/banner.png">
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--fg:#16181d;--mute:#5d6470;--acc:#0b6bcb;--line:#e1e4e8;--code:#eef1f5}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#181b21;--fg:#e8eaee;--mute:#9aa1ad;--acc:#5aa9ff;--line:#2a2f38;--code:#22262e}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 system-ui,-apple-system,sans-serif}
+main{max-width:640px;margin:0 auto;padding:28px 16px 48px}
+h1{font-size:1.7rem;margin:0 0 6px;letter-spacing:-.3px}
+h2{font-size:1.15rem;margin:0 0 4px}
+.sub{color:var(--mute);margin:0 0 22px}
+section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:14px}
+.tag{display:inline-block;font-size:.78rem;color:var(--mute);border:1px solid var(--line);border-radius:999px;padding:1px 9px;margin-bottom:10px}
+ol{padding-left:20px;margin:10px 0 0}li{margin:6px 0}
+code,pre{background:var(--code);border-radius:6px;font-size:.88em}
+code{padding:2px 6px;word-break:break-all}
+pre{padding:10px 12px;overflow-x:auto;white-space:pre-wrap;word-break:break-all;margin:8px 0}
+.btn{display:inline-block;background:var(--acc);color:#fff;text-decoration:none;padding:10px 16px;border-radius:8px;font-weight:600;margin-top:6px}
+.note{color:var(--mute);font-size:.9rem;margin:10px 0 0}
+a{color:var(--acc)}
+footer{color:var(--mute);font-size:.85rem;text-align:center;margin-top:24px}
+</style>
+</head>
+<body>
+<main>
+<h1>Mobile Chrome AdBlock</h1>
+<p class="sub">Block ads in Chrome on Android and iPhone. Pick whichever option suits you.</p>
+
+<section>
+<span class="tag">Android, recommended</span>
+<h2>Android app</h2>
+<p class="note" style="margin-top:0">Blocks about 400,000 ad and tracker domains right on your phone. No account, no server, works offline.</p>
+<ol>
+<li><a class="btn" href="https://github.com/TYFSADIK/mobile-chrome-adblock/releases/latest/download/AdBlock.apk">Download AdBlock.apk</a></li>
+<li>Open the file. If Android asks, allow your browser to install apps.</li>
+<li>Open AdBlock and tap <b>Turn on</b>.</li>
+</ol>
+<p class="note">You can also add the AdBlock tile to Quick Settings to switch it on and off from the notification shade.</p>
+</section>
+
+<section>
+<span class="tag">iPhone, easiest</span>
+<h2>iPhone profile (no app)</h2>
+<p class="note" style="margin-top:0">Switches your iPhone to AdGuard's free ad-blocking DNS. Takes 30 seconds.</p>
+<ol>
+<li>Open this page in <b>Safari</b> and tap:<br><a class="btn" href="adguard-dns.mobileconfig">Download profile</a></li>
+<li>Go to <b>Settings</b>, tap <b>Profile Downloaded</b>, then <b>Install</b>.</li>
+<li>Chrome and every other app now skip ads.</li>
+</ol>
+<p class="note">To turn it off, remove the profile in Settings, General, VPN, DNS &amp; Device Management.</p>
+</section>
+
+<section>
+<span class="tag">iPhone, advanced</span>
+<h2>iPhone app (IPA)</h2>
+<p class="note" style="margin-top:0">Blocks ads on the phone itself, like the Android app. Apple only lets VPN-type apps run when signed with a paid Apple developer account, so you need one to install it (with Sideloadly, AltStore or Xcode).</p>
+<a class="btn" href="https://github.com/TYFSADIK/mobile-chrome-adblock/releases/latest/download/AdBlock.ipa">Download AdBlock.ipa</a>
+</section>
+
+<section>
+<span class="tag">Android, terminal</span>
+<h2>Termux</h2>
+<p class="note" style="margin-top:0">Install the command:</p>
+<pre>curl -fsSL https://raw.githubusercontent.com/TYFSADIK/mobile-chrome-adblock/main/termux/adblock -o $PREFIX/bin/adblock && chmod +x $PREFIX/bin/adblock</pre>
+<p class="note">Then <code>adblock on</code>, <code>adblock off</code> or <code>adblock status</code> to control the app. On a rooted phone, <code>adblock root-on</code> blocks ads with Termux alone.</p>
+</section>
+
+<section>
+<span class="tag">Any phone, self-hosted</span>
+<h2>Your own server</h2>
+<p class="note" style="margin-top:0">Run the blocker on a VPS and point all your family's phones at it.</p>
+<a class="btn" href="https://github.com/TYFSADIK/mobile-chrome-adblock#run-your-own-server">Setup guide</a>
+</section>
+
+<footer>
+Open source on <a href="https://github.com/TYFSADIK/mobile-chrome-adblock">GitHub</a>. YouTube video ads can't be blocked by any DNS-based blocker.
+</footer>
+</main>
+</body>
+</html>

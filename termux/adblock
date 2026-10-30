@@ -1,0 +1,165 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# Control ad blocking from Termux.
+#
+#   adblock on | off | toggle | status    switch the AdBlock app (no root needed)
+#   adblock install-app                   download and open the latest AdBlock APK
+#   adblock root-on [ultimate]            block ads with Termux alone (root only, no app)
+#   adblock root-off                      stop root mode
+#   adblock allow <domain>                never block a domain in root mode
+#   adblock update                        update this script and the root-mode server
+#
+# Install:
+#   curl -fsSL https://raw.githubusercontent.com/TYFSADIK/mobile-chrome-adblock/main/termux/adblock -o $PREFIX/bin/adblock && chmod +x $PREFIX/bin/adblock
+set -euo pipefail
+
+PKG=com.tyfsadik.adblock
+REPO=TYFSADIK/mobile-chrome-adblock
+DIR="$HOME/.adblock"
+BIN="$DIR/adblock-dns"
+PORT=5354
+
+die() { echo "adblock: $*" >&2; exit 1; }
+
+# --- app mode -------------------------------------------------------------
+
+app_status() {
+    # The app answers this broadcast with "on ..." or "off ..." in the result data.
+    am broadcast -n "$PKG/.StatusReceiver" 2>/dev/null | sed -n 's/.*data="\([^"]*\)".*/\1/p'
+}
+
+app_send() {
+    am start -n "$PKG/.ToggleActivity" -a "$PKG.$1" >/dev/null 2>&1 || die "could not reach the AdBlock app"
+    sleep 2
+}
+
+need_app() {
+    [ -n "$(app_status)" ] && return
+    cat >&2 <<EOF
+The AdBlock app isn't installed.
+  Install it:        adblock install-app
+  Or, if rooted:     adblock root-on
+EOF
+    exit 1
+}
+
+install_app() {
+    mkdir -p "$DIR"
+    echo "Downloading the latest AdBlock APK..."
+    curl -fL --progress-bar -o "$DIR/AdBlock.apk" "https://github.com/$REPO/releases/latest/download/AdBlock.apk" ||
+        die "download failed"
+    echo "Opening the installer. Allow Termux to install apps if Android asks."
+    termux-open "$DIR/AdBlock.apk"
+}
+
+# --- root mode ------------------------------------------------------------
+
+root_running() { [ -f "$DIR/pid" ] && kill -0 "$(cat "$DIR/pid")" 2>/dev/null; }
+
+get_server() {
+    [ -x "$BIN" ] && return
+    mkdir -p "$DIR"
+    local arch
+    case "$(uname -m)" in
+        aarch64 | arm64) arch=linux-arm64 ;;
+        armv7l | armv8l) arch=linux-arm ;;
+        x86_64) arch=linux-amd64 ;;
+        *) die "unsupported CPU: $(uname -m)" ;;
+    esac
+    echo "Downloading the blocker..."
+    if ! curl -fsL -o "$BIN" "https://github.com/$REPO/releases/latest/download/adblock-dns-$arch"; then
+        echo "No prebuilt download, building from source instead (one time, a few minutes)..."
+        pkg install -y golang >/dev/null
+        GOBIN="$DIR" go install "github.com/$REPO@latest"
+        mv "$DIR/mobile-chrome-adblock" "$BIN"
+    fi
+    chmod +x "$BIN"
+}
+
+# Every DNS lookup on the phone, except our own, goes to the local server.
+# Encrypted DNS (port 853) and IPv6 DNS are rejected so the phone falls back
+# to plain IPv4 DNS, which we can filter.
+firewall() {
+    local action=$1 uid
+    uid=$(id -u)
+    su -c "
+        iptables -t nat -D OUTPUT -j ADBLOCK 2>/dev/null
+        iptables -t nat -F ADBLOCK 2>/dev/null; iptables -t nat -X ADBLOCK 2>/dev/null
+        iptables -D OUTPUT -j ADBLOCK_DOT 2>/dev/null
+        iptables -F ADBLOCK_DOT 2>/dev/null; iptables -X ADBLOCK_DOT 2>/dev/null
+        ip6tables -D OUTPUT -j ADBLOCK6 2>/dev/null
+        ip6tables -F ADBLOCK6 2>/dev/null; ip6tables -X ADBLOCK6 2>/dev/null
+        [ '$action' = on ] || exit 0
+        set -e
+        iptables -t nat -N ADBLOCK
+        iptables -t nat -A ADBLOCK -m owner --uid-owner $uid -j RETURN
+        iptables -t nat -A ADBLOCK -p udp --dport 53 -j DNAT --to-destination 127.0.0.1:$PORT
+        iptables -t nat -A ADBLOCK -p tcp --dport 53 -j DNAT --to-destination 127.0.0.1:$PORT
+        iptables -t nat -I OUTPUT -j ADBLOCK
+        iptables -N ADBLOCK_DOT
+        iptables -A ADBLOCK_DOT -m owner --uid-owner $uid -j RETURN
+        iptables -A ADBLOCK_DOT -p tcp --dport 853 -j REJECT --reject-with tcp-reset
+        iptables -I OUTPUT -j ADBLOCK_DOT
+        ip6tables -N ADBLOCK6
+        ip6tables -A ADBLOCK6 -m owner --uid-owner $uid -j RETURN
+        ip6tables -A ADBLOCK6 -p udp --dport 53 -j REJECT
+        ip6tables -A ADBLOCK6 -p tcp --dport 53 -j REJECT --reject-with tcp-reset
+        ip6tables -A ADBLOCK6 -p tcp --dport 853 -j REJECT --reject-with tcp-reset
+        ip6tables -I OUTPUT -j ADBLOCK6
+    "
+}
+
+root_on() {
+    command -v su >/dev/null && su -c true 2>/dev/null || die "root mode needs a rooted phone. Without root, use the app: adblock install-app"
+    root_running && { echo "Already on (root mode)."; return; }
+    get_server
+    touch "$DIR/allowlist.txt"
+    echo "Loading blocklists..."
+    nohup "$BIN" -dns-addr "127.0.0.1:$PORT" -level "${1:-strong}" -allowlist "$DIR/allowlist.txt" >"$DIR/log" 2>&1 &
+    echo $! >"$DIR/pid"
+    for _ in $(seq 1 90); do
+        grep -q "plain DNS on" "$DIR/log" && break
+        root_running || { cat "$DIR/log"; die "the blocker exited"; }
+        sleep 1
+    done
+    firewall on
+    echo "On (root mode). $(grep -o '[0-9]* blocked domains' "$DIR/log" | tail -1)."
+}
+
+root_off() {
+    firewall off
+    if root_running; then kill "$(cat "$DIR/pid")"; fi
+    rm -f "$DIR/pid"
+    echo "Off (root mode)."
+}
+
+# --- commands -------------------------------------------------------------
+
+case "${1:-status}" in
+    on) need_app; app_send ON; echo "$(app_status)" ;;
+    off) need_app; app_send OFF; echo "$(app_status)" ;;
+    toggle) need_app; app_send TOGGLE; echo "$(app_status)" ;;
+    status)
+        if root_running; then
+            echo "on (root mode)"
+        elif [ -n "$(app_status)" ]; then
+            app_status
+        else
+            echo "off (app not installed, root mode not running)"
+        fi
+        ;;
+    install-app) install_app ;;
+    root-on) root_on "${2:-strong}" ;;
+    root-off) root_off ;;
+    allow)
+        [ -n "${2:-}" ] || die "usage: adblock allow example.com"
+        mkdir -p "$DIR"; echo "$2" >>"$DIR/allowlist.txt"
+        if root_running; then root_off >/dev/null; root_on; fi
+        echo "Allowed $2." ;;
+    update)
+        curl -fsSL -o "$PREFIX/bin/adblock" "https://raw.githubusercontent.com/$REPO/main/termux/adblock"
+        chmod +x "$PREFIX/bin/adblock"
+        rm -f "$BIN"
+        echo "Updated. Root mode will download the newest blocker next time it starts." ;;
+    -h | --help | help) sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//' ;;
+    *) die "unknown command '$1' (try: adblock help)" ;;
+esac

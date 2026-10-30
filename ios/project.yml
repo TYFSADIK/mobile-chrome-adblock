@@ -1,0 +1,52 @@
+# Generate the Xcode project with: xcodegen   (brew install xcodegen)
+name: AdBlock
+options:
+  bundleIdPrefix: com.tyfsadik
+  deploymentTarget:
+    iOS: "16.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    TARGETED_DEVICE_FAMILY: "1,2"
+targets:
+  AdBlock:
+    type: application
+    platform: iOS
+    sources: [AdBlock]
+    scheme: {}
+    info:
+      path: AdBlock/Info.plist
+      properties:
+        CFBundleDisplayName: AdBlock
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+    entitlements:
+      path: AdBlock/AdBlock.entitlements
+      properties:
+        com.apple.developer.networking.networkextension: [packet-tunnel-provider]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tyfsadik.adblock
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    dependencies:
+      - target: Tunnel
+  Tunnel:
+    type: app-extension
+    platform: iOS
+    sources: [Tunnel]
+    info:
+      path: Tunnel/Info.plist
+      properties:
+        CFBundleDisplayName: AdBlock Tunnel
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.networkextension.packet-tunnel
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).PacketTunnelProvider
+    entitlements:
+      path: Tunnel/Tunnel.entitlements
+      properties:
+        com.apple.developer.networking.networkextension: [packet-tunnel-provider]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tyfsadik.adblock.tunnel

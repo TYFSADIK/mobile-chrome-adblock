@@ -1,4 +1,4 @@
-module adblock-dns
+module github.com/TYFSADIK/mobile-chrome-adblock
 
 go 1.27.3
 

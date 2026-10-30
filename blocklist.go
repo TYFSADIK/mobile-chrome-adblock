@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -12,11 +14,52 @@ import (
 	"time"
 )
 
-// DefaultLists are well-maintained ad/tracker lists. Hosts-format and
-// AdBlock-style (||domain^) lists are both understood.
-var DefaultLists = []string{
-	"https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts",
-	"https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt",
+const hagezi = "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/"
+
+// Levels maps each blocking level to its lists. Hosts-format, plain domain
+// and AdBlock-style (||domain^) lists are all understood. Every level also
+// blocks public encrypted-DNS servers so apps can't route around the filter.
+var Levels = map[string][]string{
+	"strong": {
+		"https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts",
+		"https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt",
+		hagezi + "pro.plus-onlydomains.txt",
+		hagezi + "doh-onlydomains.txt",
+	},
+	"ultimate": {
+		"https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts",
+		"https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt",
+		hagezi + "ultimate-onlydomains.txt",
+		hagezi + "doh-onlydomains.txt",
+	},
+}
+
+// httpClient downloads blocklists. It resolves names through the upstream
+// servers directly, which keeps working on Android (no /etc/resolv.conf) and
+// when this process is itself the system resolver.
+var httpClient = &http.Client{Timeout: 60 * time.Second}
+
+func useUpstreamForDownloads(upstreams []string) {
+	resolver := &net.Resolver{
+		PreferGo: true,
+		Dial: func(ctx context.Context, network, _ string) (net.Conn, error) {
+			var d net.Dialer
+			var err error
+			for _, up := range upstreams {
+				var c net.Conn
+				if c, err = d.DialContext(ctx, network, up); err == nil {
+					return c, nil
+				}
+			}
+			return nil, err
+		},
+	}
+	dialer := &net.Dialer{Timeout: 15 * time.Second, Resolver: resolver}
+	httpClient.Transport = &http.Transport{
+		Proxy:               http.ProxyFromEnvironment,
+		DialContext:         dialer.DialContext,
+		TLSHandshakeTimeout: 15 * time.Second,
+	}
 }
 
 type ruleSet struct {
@@ -123,8 +166,7 @@ func open(src string) (io.ReadCloser, error) {
 	if !strings.HasPrefix(src, "http://") && !strings.HasPrefix(src, "https://") {
 		return os.Open(src)
 	}
-	c := &http.Client{Timeout: 60 * time.Second}
-	resp, err := c.Get(src)
+	resp, err := httpClient.Get(src)
 	if err != nil {
 		return nil, err
 	}

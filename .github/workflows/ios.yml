@@ -1,0 +1,41 @@
+name: iOS app
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+    paths-ignore: ["android/**", "docs/**", "*.md"]
+  pull_request:
+    paths: ["ios/**"]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install xcodegen
+      - name: Build blocklist
+        run: python3 -I ios/scripts/build-blocklist.py ios/Tunnel
+      - name: Generate project
+        working-directory: ios
+        run: xcodegen
+      - name: Build
+        run: |
+          xcodebuild -project ios/AdBlock.xcodeproj -scheme AdBlock -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath ios/build \
+            CODE_SIGNING_ALLOWED=NO build
+      - name: Package unsigned IPA
+        run: |
+          APP=ios/build/Build/Products/Release-iphoneos/AdBlock.app
+          # Ad-hoc signatures carry the Network Extension entitlement so sideloading tools keep it.
+          codesign -f -s - --entitlements ios/Tunnel/Tunnel.entitlements "$APP/PlugIns/Tunnel.appex"
+          codesign -f -s - --entitlements ios/AdBlock/AdBlock.entitlements "$APP"
+          mkdir Payload && cp -R "$APP" Payload/ && zip -qry AdBlock.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AdBlock-ipa
+          path: AdBlock.ipa
+      - if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: AdBlock.ipa

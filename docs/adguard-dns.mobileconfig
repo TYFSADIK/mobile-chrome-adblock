@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>PayloadContent</key>
+	<array>
+		<dict>
+			<key>DNSSettings</key>
+			<dict>
+				<key>DNSProtocol</key>
+				<string>HTTPS</string>
+				<key>ServerURL</key>
+				<string>https://dns.adguard-dns.com/dns-query</string>
+			</dict>
+			<key>PayloadDisplayName</key>
+			<string>Ad-blocking DNS (AdGuard)</string>
+			<key>PayloadIdentifier</key>
+			<string>io.github.tyfsadik.adblock.adguard.dns</string>
+			<key>PayloadType</key>
+			<string>com.apple.dnsSettings.managed</string>
+			<key>PayloadUUID</key>
+			<string>6A3F2D0E-4B1C-4E7A-9F5D-2C8B1A7E3D41</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+		</dict>
+	</array>
+	<key>PayloadDescription</key>
+	<string>Sends DNS through AdGuard's free public ad-blocking DNS, which blocks ad and tracker domains in Chrome, Safari and all apps. No app or server needed.</string>
+	<key>PayloadDisplayName</key>
+	<string>AdBlock (free, no app)</string>
+	<key>PayloadIdentifier</key>
+	<string>io.github.tyfsadik.adblock.adguard</string>
+	<key>PayloadRemovalDisallowed</key>
+	<false/>
+	<key>PayloadType</key>
+	<string>Configuration</string>
+	<key>PayloadUUID</key>
+	<string>B7C4E1A9-3D2F-4A6B-8E0C-5F9D7B2A1C63</string>
+	<key>PayloadVersion</key>
+	<integer>1</integer>
+</dict>
+</plist>

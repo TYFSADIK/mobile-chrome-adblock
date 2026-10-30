@@ -27,18 +27,27 @@ func main() {
 		dev       = flag.Bool("dev", false, "local testing: plain HTTP DoH on -http-addr and plain DNS on -dns-addr, no TLS")
 		httpAddr  = flag.String("http-addr", ":8053", "listen address for DoH in -dev mode")
 		dnsAddr   = flag.String("dns-addr", "", "optional plain DNS listener, e.g. :53 (keep firewalled to your own network)")
-		lists     = flag.String("lists", strings.Join(DefaultLists, ","), "comma-separated blocklist URLs or files")
+		level     = flag.String("level", "strong", "blocking level: strong, or ultimate (blocks more, may break some sites)")
+		lists     = flag.String("lists", "", "comma-separated blocklist URLs or files, replacing the -level lists")
 		allowFile = flag.String("allowlist", "allowlist.txt", "file of domains that must never be blocked, one per line")
 		upstream  = flag.String("upstream", "1.1.1.1:53,9.9.9.9:53", "comma-separated upstream DNS servers")
 		refresh   = flag.Duration("refresh", 24*time.Hour, "how often to re-download blocklists")
 		logBlocks = flag.Bool("log-blocks", false, "log every blocked domain")
 	)
 	flag.Parse()
-	if *domain == "" && !*dev {
-		log.Fatal("set -domain dns.example.com for production, or -dev for local testing")
+	if *domain == "" && !*dev && *dnsAddr == "" {
+		log.Fatal("set -domain dns.example.com for production, -dns-addr for a local resolver, or -dev for testing")
 	}
+	sources := splitList(*lists)
+	if len(sources) == 0 {
+		var ok bool
+		if sources, ok = Levels[*level]; !ok {
+			log.Fatalf("unknown -level %q (use strong or ultimate)", *level)
+		}
+	}
+	useUpstreamForDownloads(splitList(*upstream))
 
-	bl := NewBlocklist(splitList(*lists), *allowFile)
+	bl := NewBlocklist(sources, *allowFile)
 	bl.Reload()
 	go bl.AutoReload(*refresh)
 
@@ -50,6 +59,10 @@ func main() {
 			go func() { log.Fatal(srv.ListenAndServe()) }()
 		}
 		log.Printf("plain DNS on %s", *dnsAddr)
+	}
+
+	if *domain == "" && !*dev {
+		select {} // local resolver only (e.g. Termux on a rooted phone)
 	}
 
 	if *dev {

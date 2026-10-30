@@ -19,6 +19,7 @@ jobs:
             os=${t%/*}; arch=${t#*/}; ext=""; [ "$os" = windows ] && ext=.exe
             CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -trimpath -ldflags="-s -w" -o dist/adblock-dns-$os-$arch$ext .
           done
-      - run: gh release create "$GITHUB_REF_NAME" dist/* --generate-notes
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true

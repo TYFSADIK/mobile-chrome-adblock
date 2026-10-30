@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AdBlock</string>
+    <string name="tile_label">AdBlock</string>
+    <string name="channel_name">Blocking status</string>
+    <string name="notification_title">Blocking ads</string>
+    <string name="notification_text">Ads and trackers are blocked in Chrome and all apps.</string>
+
+    <string name="turn_on">Turn on</string>
+    <string name="turn_off">Turn off</string>
+    <string name="status_on">Blocking ads in Chrome and all apps</string>
+    <string name="status_off">Off</string>
+    <string name="stats">%1$,d lookups, %2$,d blocked (%3$d%%)</string>
+
+    <string name="private_dns_warning">Private DNS is set to %1$s, which bypasses AdBlock. Go to Settings, Network and internet, Private DNS, and choose Automatic or Off.</string>
+
+    <string name="level_label">Blocking level</string>
+    <string name="level_strong">Strong (recommended)</string>
+    <string name="level_ultimate">Ultimate (blocks more, may break some sites)</string>
+
+    <string name="list_info">%1$s domains, updated %2$s</string>
+    <string name="bundled">with the app</string>
+    <string name="update_lists">Update lists</string>
+    <string name="updating">Downloading lists…</string>
+    <string name="loading">Loading lists…</string>
+    <string name="updated">Lists updated</string>
+    <string name="update_failed">Update failed: %1$s</string>
+
+    <string name="recent_label">Recently blocked</string>
+    <string name="recent_empty">Nothing blocked yet. Turn it on and open a website.</string>
+    <string name="allow_question">Always allow this domain? Do this if a site or app stopped working.</string>
+    <string name="allow">Allow</string>
+    <string name="allowed_title">Allowed</string>
+    <string name="nothing_allowed">No allowed domains yet. Tap a blocked domain to allow it.</string>
+    <string name="block_again_question">Block this domain again?</string>
+    <string name="block_again">Block again</string>
+
+    <string name="limits_note">YouTube video ads and sponsored posts come from the same servers as the content, so no DNS blocker can remove them.</string>
+</resources>
