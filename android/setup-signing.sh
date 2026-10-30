@@ -5,6 +5,16 @@
 # have to uninstall and reinstall to get future updates.
 set -euo pipefail
 REPO="${1:-TYFSADIK/mobile-chrome-adblock}"
+
+# macOS ships a keytool stub that fails unless a JDK is installed system-wide,
+# so look for a real one (JAVA_HOME, then Homebrew's openjdk) first.
+for jdk in "${JAVA_HOME:-}" /opt/homebrew/opt/openjdk@21 /opt/homebrew/opt/openjdk /usr/local/opt/openjdk@21 /usr/local/opt/openjdk; do
+  if [ -n "$jdk" ] && [ -x "$jdk/bin/keytool" ]; then
+    export PATH="$jdk/bin:$PATH"
+    break
+  fi
+done
+keytool -help >/dev/null 2>&1 || { echo "Java is needed. Install it with: brew install openjdk@21" >&2; exit 1; }
 DIR="$HOME/.config/mobile-chrome-adblock"
 mkdir -p "$DIR" && chmod 700 "$DIR"
 if [ ! -f "$DIR/release.jks" ]; then
