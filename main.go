@@ -11,6 +11,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"log"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -66,12 +67,13 @@ func main() {
 	}
 
 	if *dev {
-		base, host := "http://localhost"+*httpAddr, "localhost"
+		local := devURL(*httpAddr)
+		base, host := local, "localhost"
 		if *domain != "" {
 			// Preview the setup page as it will look in production.
 			base, host = "https://"+*domain, *domain
 		}
-		log.Printf("dev mode: DoH at http://localhost%s%s, setup page at http://localhost%s/", *httpAddr, dohPath, *httpAddr)
+		log.Printf("dev mode: DoH at %s%s, setup page at %s/", local, dohPath, local)
 		log.Fatal(http.ListenAndServe(*httpAddr, newMux(res, bl, base, host)))
 	}
 
@@ -100,6 +102,20 @@ func main() {
 	}
 	log.Printf("serving https://%s (DoH %s) and DoT %s:853", *domain, dohPath, *domain)
 	log.Fatal(https.ListenAndServeTLS("", ""))
+}
+
+// devURL turns a listen address such as ":8053", "127.0.0.1:8053" or
+// "[::1]:8053" into a URL a browser can open, using localhost when the
+// address has no host.
+func devURL(addr string) string {
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return "http://" + addr
+	}
+	if host == "" || host == "0.0.0.0" || host == "::" {
+		host = "localhost"
+	}
+	return "http://" + net.JoinHostPort(host, port)
 }
 
 func splitList(s string) []string {
